@@ -5,9 +5,12 @@
       <SelectionState runConfigName="Noticiero.app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+<<<<<<< HEAD
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+=======
+>>>>>>> be0034f (Arreglos)
     </selectionStates>
   </component>
 </project>

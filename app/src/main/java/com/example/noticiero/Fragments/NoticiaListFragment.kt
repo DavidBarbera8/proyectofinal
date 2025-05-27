@@ -27,6 +27,7 @@ class NoticiaListFragment : Fragment(R.layout.fragment_noticia_list) {
     private lateinit var mediaPlayer: MediaPlayer
     private var musicaPosicion: Int = 0
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -49,8 +50,14 @@ class NoticiaListFragment : Fragment(R.layout.fragment_noticia_list) {
         mediaPlayer.pause()
     }
 
-
-
+    override fun onResume() {
+        super.onResume()
+        if (!mediaPlayer.isPlaying) {
+            mediaPlayer.seekTo(musicaPosicion)
+            mediaPlayer.start()
+        }
+        loadBooksFromDb()
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -63,26 +70,30 @@ class NoticiaListFragment : Fragment(R.layout.fragment_noticia_list) {
             onLongClick = { book ->
                 val index = noticiaList.indexOf(book)
                 if (index != -1) {
-                    noticiaList.removeAt(index)
-                    adapter.notifyItemRemoved(index)
-                    Toast.makeText(requireContext(), "Libro eliminado", Toast.LENGTH_SHORT).show()
+                    lifecycleScope.launch {
+                        Aplication.baseDeDatos.bookDao().deleteBook(book)
+                        noticiaList.removeAt(index)
+                        adapter.notifyItemRemoved(index)
+                        Toast.makeText(requireContext(), "Libro eliminado", Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
-
             onFavoriteClick = { book ->
                 val index = noticiaList.indexOf(book)
                 if (index != -1) {
                     book.esFavorita = !book.esFavorita
-                    adapter.notifyItemChanged(index)
-                    val msg = if (book.esFavorita) "Libro marcado como favorito" else "Libro desmarcado"
-                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    lifecycleScope.launch {
+                        Aplication.baseDeDatos.bookDao().updateBook(book)
+                        adapter.notifyItemChanged(index)
+                        val msg = if (book.esFavorita) "Libro marcado como favorito" else "Libro desmarcado"
+                        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         )
-            binding.recyclerView.adapter = adapter
-
-            loadBooksFromDb()
-        }
+        binding.recyclerView.adapter = adapter
+        loadBooksFromDb()
+    }
 
     private fun loadBooksFromDb() {
         lifecycleScope.launch {
@@ -91,14 +102,5 @@ class NoticiaListFragment : Fragment(R.layout.fragment_noticia_list) {
             noticiaList.addAll(booksFromDb)
             adapter.notifyDataSetChanged()
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (mediaPlayer != null && !mediaPlayer.isPlaying) {
-            mediaPlayer.seekTo(musicaPosicion)
-            mediaPlayer.start()
-        }
-        loadBooksFromDb()
     }
 }
